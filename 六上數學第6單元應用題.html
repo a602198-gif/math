@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>互動式數學-點擊版：比例單元</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+  <!-- Google Fonts for Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f1f5f9;
+    }
+
+    /* 數學式美觀 CSS */
+    .math-line {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      line-height: 1.8;
+      margin: 14px 0;
+    }
+
+    .math, .math-display {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+    }
+
+    .math-display {
+      justify-content: center;
+      width: 100%;
+      overflow-x: auto;
+      padding: 8px 0;
+    }
+
+    .katex {
+      font-size: 1.12em;
+    }
+
+    /* Slot 樣式 */
+    .slot {
+      min-width: 60px;
+      min-height: 48px;
+      padding: 4px 12px;
+      border: 3px solid #93c5fd;
+      border-radius: 12px;
+      background: #eff6ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #1d4ed8;
+      cursor: pointer;
+      font-size: 26px;
+      font-weight: 800;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .slot.active {
+      animation: pulseSlot 1s infinite;
+      background: #dbeafe;
+      border-color: #2563eb;
+    }
+
+    .slot.correct {
+      background: #dcfce7;
+      border-color: #22c55e;
+      color: #166534;
+      cursor: default;
+    }
+
+    @keyframes pulseSlot {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
+      70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    .btn-option {
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    .btn-option:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    .step-card {
+      transition: all 0.4s ease-out;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .step-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    mark {
+      background-color: #fef08a;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: bold;
+      color: #854d0e;
+    }
+
+    /* 隱藏捲動軸但保持功能 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 頂部列：導覽與資訊 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- 左邊：單元名稱與題目切換 -->
+      <div class="flex items-center gap-3 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 md:pb-0">
+        <span class="bg-blue-600 text-white font-extrabold px-3 py-1.5 rounded-lg text-sm shrink-0 shadow-sm">
+          📍 比例單元解題
+        </span>
+        <div id="nav-questions" class="flex gap-2 shrink-0">
+          <!-- 題目按鈕會動態生成 -->
+        </div>
+      </div>
+
+      <!-- 右邊：得分與計時 -->
+      <div class="flex items-center gap-4 bg-slate-100 px-4 py-1.5 rounded-xl border border-slate-200 text-sm font-bold w-full md:w-auto justify-end">
+        <div class="flex items-center gap-1.5 text-emerald-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+          <span>得分：<span id="score-display" class="text-emerald-800 text-base">0</span> 分</span>
+        </div>
+        <div class="h-4 w-px bg-slate-300"></div>
+        <div class="flex items-center gap-1.5 text-indigo-700">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>時間：<span id="timer-display" class="text-indigo-900 font-mono text-base">07:00</span></span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 主要內容區 (雙欄 layout) -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+      
+      <!-- 左側：題目固定區 (md 以上 sticky) -->
+      <section class="md:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:sticky md:top-20">
+        <div class="flex items-center gap-2 mb-3">
+          <span id="q-badge" class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-lg text-sm">題目 1</span>
+          <span id="q-type-badge" class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-md">比例運算</span>
+        </div>
+        
+        <h2 id="q-title" class="text-xl md:text-2xl font-bold leading-relaxed text-slate-800 mb-4">
+          <!-- 題幹動態帶入 -->
+        </h2>
+
+        <!-- SVG 動態繪圖輔助區 -->
+        <div id="q-svg-container" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-center items-center my-4 min-h-[140px]">
+          <!-- SVG 內容動態插入 -->
+        </div>
+
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl text-sm text-blue-900 font-medium">
+          💡 <span class="font-bold">解題小貼士：</span>仔細觀察題目中的比值關係與已知數量，按步驟填入正確解答！
+        </div>
+      </section>
+
+      <!-- 右側：互動步驟區 -->
+      <section class="md:col-span-7 flex flex-col gap-6">
+        <div id="steps-wrapper" class="flex flex-col gap-6">
+          <!-- 步驟動態渲染 -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 全局完成視窗 / Modal -->
+  <div id="finish-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center border border-slate-100 transform transition-all scale-95 opacity-0 modal-content">
+      <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+        🎉
+      </div>
+      <h3 class="text-2xl font-extrabold text-slate-800 mb-2">太棒了！練習完成！</h3>
+      <p class="text-slate-600 mb-6">您已完成所有題目，表現相當優異！</p>
+      
+      <div class="bg-slate-50 p-4 rounded-2xl mb-6 flex justify-around border border-slate-200">
+        <div>
+          <div class="text-xs text-slate-500 font-bold mb-1">最終得分</div>
+          <div id="modal-score" class="text-3xl font-extrabold text-emerald-600">0</div>
+        </div>
+        <div class="w-px bg-slate-200"></div>
+        <div>
+          <div class="text-xs text-slate-500 font-bold mb-1">總花費時間</div>
+          <div id="modal-time" class="text-3xl font-extrabold text-indigo-600">00:00</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="restartAll()" class="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all">
+          🔄 再做一次
+        </button>
+        <button onclick="closeModal()" class="flex-1 py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all">
+          ✕ 關閉視窗
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // 題目資料庫 (5題)
+    // ----------------------------------------------------
+    const questionsData = [
+      {
+        id: 1,
+        typeLabel: "等比求未知量",
+        titleHtml: "<mark>爸爸</mark>和<mark>阿宏</mark>兩人體重的比是<mark>8：3</mark>，爸爸體重是<mark>72公斤</mark>，阿宏的體重是幾公斤？",
+        svg: `<svg width="240" height="120" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="70" cy="40" r="22" fill="#93c5fd" />
+          <path d="M70 62 L70 95 M50 75 L90 75 M55 115 L70 95 L85 115" stroke="#2563eb" stroke-width="5" stroke-linecap="round"/>
+          <text x="70" y="15" text-anchor="middle" font-weight="bold" fill="#1e40af">爸爸 (8)</text>
+          
+          <circle cx="170" cy="50" r="16" fill="#fde047" />
+          <path d="M170 66 L170 92 M155 76 L185 76 M160 110 L170 92 L180 110" stroke="#ca8a04" stroke-width="4" stroke-linecap="round"/>
+          <text x="170" y="25" text-anchor="middle" font-weight="bold" fill="#854d0e">阿宏 (3)</text>
+        </svg>`,
+        steps: [
+          {
+            instruction: "設阿宏體重為 A 公斤。寫出體重比例式：",
+            slots: ["8", "3", "72"], // 填入正確答案
+            options: ["8", "3", "72", "9", "24", "80"], // 混淆選項
+            latexBeforeSlot0: "",
+            latexAfterSlot0: ":",
+            latexAfterSlot1: "= ",
+            latexAfterSlot2: ":A"
+          },
+          {
+            instruction: "找出放大倍數：爸爸體重 72 是 8 的幾倍？",
+            slots: ["72", "8", "9"],
+            options: ["72", "8", "9", "3", "24", "6"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\div",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(倍)"
+          },
+          {
+            instruction: "計算阿宏的體重：將阿宏的比數 3 乘以 9 倍：",
+            slots: ["3", "9", "27"],
+            options: ["3", "9", "27", "24", "72", "18"],
+            latexBeforeSlot0: "A =",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公斤)"
+          }
+        ]
+      },
+      {
+        id: 2,
+        typeLabel: "按比例分配",
+        titleHtml: "水果行昨天賣出的<mark>橘子和柳丁共210公斤</mark>，橘子和柳丁賣出的重量比是<mark>3：4</mark>，橘子和柳丁各賣出幾公斤？",
+        svg: `<svg width="260" height="110" viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="35" width="90" height="40" rx="8" fill="#fdba74" stroke="#ea580c" stroke-width="2"/>
+          <text x="65" y="60" text-anchor="middle" font-weight="bold" fill="#9a3412">橘子 (3份)</text>
+          
+          <rect x="120" y="35" width="120" height="40" rx="8" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+          <text x="180" y="60" text-anchor="middle" font-weight="bold" fill="#854d0e">柳丁 (4份)</text>
+          
+          <path d="M 20 85 Q 130 105 240 85" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4"/>
+          <text x="130" y="105" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">總共 210 公斤</text>
+        </svg>`,
+        steps: [
+          {
+            instruction: "計算總份數：橘子 3 份加柳丁 4 份共幾份？",
+            slots: ["3", "4", "7"],
+            options: ["3", "4", "7", "210", "12", "30"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "+",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(份)"
+          },
+          {
+            instruction: "計算每 1 份是多少公斤：",
+            slots: ["210", "7", "30"],
+            options: ["210", "7", "30", "70", "3", "4"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\div",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公斤)"
+          },
+          {
+            instruction: "求橘子重量：3 份乘以每份 30 公斤：",
+            slots: ["30", "3", "90"],
+            options: ["30", "3", "90", "120", "210", "70"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公斤)"
+          },
+          {
+            instruction: "求柳丁重量：4 份乘以每份 30 公斤：",
+            slots: ["30", "4", "120"],
+            options: ["30", "4", "120", "90", "160", "70"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公斤)"
+          }
+        ]
+      },
+      {
+        id: 3,
+        typeLabel: "已知部分求對應量",
+        titleHtml: "調配一杯蜂蜜水，<mark>蜂蜜對水的重量比是2:9</mark>。若用了<mark>540克的水</mark>，需要加入多少公克的蜂蜜？",
+        svg: `<svg width="220" height="120" viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- 水杯 -->
+          <rect x="70" y="20" width="80" height="85" rx="6" fill="#e0f2fe" stroke="#0284c7" stroke-width="3"/>
+          <!-- 水 -->
+          <rect x="73" y="45" width="74" height="57" rx="3" fill="#38bdf8" opacity="0.6"/>
+          <!-- 蜂蜜層 -->
+          <rect x="73" y="30" width="74" height="15" rx="2" fill="#fbbf24"/>
+          <text x="110" y="42" text-anchor="middle" font-size="11" font-weight="bold" fill="#78350f">蜂蜜 (2)</text>
+          <text x="110" y="75" text-anchor="middle" font-size="12" font-weight="bold" fill="#0369a1">水 540g (9)</text>
+        </svg>`,
+        steps: [
+          {
+            instruction: "算出水放大幾倍（水的重量 540g 對應 9 份）：",
+            slots: ["540", "9", "60"],
+            options: ["540", "9", "60", "2", "120", "30"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\div",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(倍)"
+          },
+          {
+            instruction: "計算所需蜂蜜重量：蜂蜜 2 份乘以 60 倍：",
+            slots: ["2", "60", "120"],
+            options: ["2", "60", "120", "540", "180", "90"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公克)"
+          }
+        ]
+      },
+      {
+        id: 4,
+        typeLabel: "單位轉換與比例",
+        titleHtml: "把一根<mark>長2公尺</mark>木棍鋸成兩段，長度的比是<mark>3：5</mark>，這兩段木棍各長幾公分？",
+        svg: `<svg width="260" height="100" viewBox="0 0 260 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- 木棍短 -->
+          <rect x="20" y="35" width="85" height="24" rx="4" fill="#d97706"/>
+          <text x="62" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">3 份</text>
+          <!-- 木棍長 -->
+          <rect x="110" y="35" width="130" height="24" rx="4" fill="#b45309"/>
+          <text x="175" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">5 份</text>
+          <!-- 鋸子標記 -->
+          <line x1="107" y1="20" x2="107" y2="70" stroke="#ef4444" stroke-width="2" stroke-dasharray="3"/>
+          <text x="130" y="85" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569">全長 2 公尺</text>
+        </svg>`,
+        steps: [
+          {
+            instruction: "將公尺換算成公分（1 公尺 = 100 公分）：",
+            slots: ["2", "100", "200"],
+            options: ["2", "100", "200", "20", "1000", "50"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公分)"
+          },
+          {
+            instruction: "算出總份數（3 份 + 5 份）與每份長度：",
+            slots: ["200", "8", "25"],
+            options: ["200", "8", "25", "3", "5", "40"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\div (3+5) =",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公分)"
+          },
+          {
+            instruction: "計算較短段木棍長度（3 份）：",
+            slots: ["25", "3", "75"],
+            options: ["25", "3", "75", "125", "60", "100"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公分)"
+          },
+          {
+            instruction: "計算較長段木棍長度（5 份）：",
+            slots: ["25", "5", "125"],
+            options: ["25", "5", "125", "75", "150", "200"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公分)"
+          }
+        ]
+      },
+      {
+        id: 5,
+        typeLabel: "比例尺實體換算",
+        titleHtml: "在一張比例尺為 <mark>1:5000</mark> 的地圖上，一段長度為 <mark>4 公分</mark> 的道路，其實際長度是多少公尺？",
+        svg: `<svg width="240" height="110" viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="20" width="200" height="70" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="40" y1="55" x2="160" y2="55" stroke="#2563eb" stroke-width="4" stroke-dasharray="6"/>
+          <circle cx="40" cy="55" r="5" fill="#1d4ed8"/>
+          <circle cx="160" cy="55" r="5" fill="#1d4ed8"/>
+          <text x="100" y="45" text-anchor="middle" font-weight="bold" fill="#1e40af">圖上 4 公分</text>
+          <text x="100" y="78" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">比例尺 1 : 5000</text>
+        </svg>`,
+        steps: [
+          {
+            instruction: "算出實際公分數（放大 5000 倍）：",
+            slots: ["4", "5000", "20000"],
+            options: ["4", "5000", "20000", "10000", "2000", "500"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\times",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公分)"
+          },
+          {
+            instruction: "將公分換算為公尺（除以 100）：",
+            slots: ["20000", "100", "200"],
+            options: ["20000", "100", "200", "20", "2000", "1000"],
+            latexBeforeSlot0: "",
+            latexAfterSlot0: "\\div",
+            latexAfterSlot1: "=",
+            latexAfterSlot2: "(公尺)"
+          }
+        ]
+      }
+    ];
+
+    // ----------------------------------------------------
+    // 全局狀態管理
+    // ----------------------------------------------------
+    let currentQuestionIdx = 0;
+    let userProgress = {}; // 紀錄每題進度: { qId: { currentStep: 0, completed: false, stepAnswers: {} } }
+    let totalScore = 0;
+    let timerSeconds = 420; // 7 分鐘
+    let timerInterval = null;
+    let audioCtx = null;
+
+    // 音效產生器 (Web Audio API)
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'correct') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+          osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'wrong') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+          osc.frequency.setValueAtTime(180, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.25);
+        }
+      } catch (e) {
+        console.log("Audio not supported or blocked.");
+      }
+    }
+
+    // ----------------------------------------------------
+    // 初始化邏輯
+    // ----------------------------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      initProgress();
+      renderNav();
+      loadQuestion(0);
+      startTimer();
+    });
+
+    function initProgress() {
+      questionsData.forEach(q => {
+        userProgress[q.id] = {
+          currentStep: 0,
+          completed: false,
+          failedSteps: new Set(), // 紀錄有錯過的步驟 (答錯不可得該步驟分)
+          stepAnswers: {} // 記錄填寫的答案
+        };
+      });
+    }
+
+    // 啟動計時器
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (timerSeconds > 0) {
+          timerSeconds--;
+          updateTimerDisplay();
+        } else {
+          clearInterval(timerInterval);
+          showFinishModal();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(timerSeconds / 60);
+      const secs = timerSeconds % 60;
+      document.getElementById("timer-display").innerText = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // KaTeX 自動渲染函式
+    function renderMathInContainer(container) {
+      if (typeof katex === 'undefined') return;
+      container.querySelectorAll('.math').forEach(el => {
+        if (!el.dataset.rendered) {
+          katex.render(el.dataset.latex, el, { throwOnError: false, displayMode: false });
+          el.dataset.rendered = "true";
+        }
+      });
+      container.querySelectorAll('.math-display').forEach(el => {
+        if (!el.dataset.rendered) {
+          katex.render(el.dataset.latex, el, { throwOnError: false, displayMode: true });
+          el.dataset.rendered = "true";
+        }
+      });
+    }
+
+    // 渲染導覽列
+    function renderNav() {
+      const navContainer = document.getElementById("nav-questions");
+      navContainer.innerHTML = "";
+
+      questionsData.forEach((q, idx) => {
+        const btn = document.createElement("button");
+        const isDone = userProgress[q.id].completed;
+        const isCurrent = idx === currentQuestionIdx;
+
+        btn.className = `px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1 shrink-0 ${
+          isCurrent 
+            ? 'bg-blue-600 text-white shadow-md' 
+            : isDone 
+            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+        }`;
+        
+        btn.innerHTML = `${isDone ? '✔ ' : ''}題目 ${idx + 1}`;
+        btn.onclick = () => switchQuestion(idx);
+        navContainer.appendChild(btn);
+      });
+
+      document.getElementById("score-display").innerText = totalScore;
+    }
+
+    // 切換題目
+    function switchQuestion(idx) {
+      currentQuestionIdx = idx;
+      renderNav();
+      loadQuestion(idx);
+    }
+
+    // 載入題目畫面
+    function loadQuestion(idx) {
+      const q = questionsData[idx];
+      document.getElementById("q-badge").innerText = `題目 ${idx + 1}`;
+      document.getElementById("q-type-badge").innerText = q.typeLabel;
+      document.getElementById("q-title").innerHTML = q.titleHtml;
+      document.getElementById("q-svg-container").innerHTML = q.svg;
+
+      renderSteps(q);
+    }
+
+    // 渲染步驟列表
+    function renderSteps(q) {
+      const stepsWrapper = document.getElementById("steps-wrapper");
+      stepsWrapper.innerHTML = "";
+
+      const prog = userProgress[q.id];
+
+      q.steps.forEach((step, sIdx) => {
+        const isUnlocked = sIdx <= prog.currentStep;
+        const isStepDone = sIdx < prog.currentStep || prog.completed;
+
+        const card = document.createElement("div");
+        card.id = `step-card-${q.id}-${sIdx}`;
+        card.className = `step-card bg-white p-6 rounded-2xl border ${
+          isUnlocked ? 'border-slate-200 shadow-sm visible' : 'border-slate-100 opacity-40 pointer-events-none'
+        }`;
+
+        // 標題與對錯勾勾
+        let headerHtml = `
+          <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+            <span class="font-extrabold text-blue-600 text-sm tracking-wide">STEP ${sIdx + 1}</span>
+            ${isStepDone ? '<span class="text-emerald-600 font-bold text-sm flex items-center gap-1">✔ 完成</span>' : ''}
+          </div>
+          <p class="font-semibold text-slate-700 mb-4">${step.instruction}</p>
+        `;
+
+        // 算式區塊 (KaTeX + slots)
+        let mathLineHtml = `<div class="math-line">`;
+        if (step.latexBeforeSlot0) mathLineHtml += `<span class="math" data-latex="${step.latexBeforeSlot0}"></span>`;
+
+        step.slots.forEach((val, slotIdx) => {
+          const savedVal = prog.stepAnswers[`${sIdx}-${slotIdx}`] || "";
+          const isSlotCorrect = isStepDone;
+          
+          mathLineHtml += `
+            <span class="slot ${isSlotCorrect ? 'correct' : ''}" 
+                  id="slot-${q.id}-${sIdx}-${slotIdx}" 
+                  onclick="clearSlot(${q.id}, ${sIdx}, ${slotIdx})">
+              ${savedVal}
+            </span>
+          `;
+
+          const latexKey = `latexAfterSlot${slotIdx}`;
+          if (step[latexKey]) {
+            mathLineHtml += `<span class="math" data-latex="${step[latexKey]}"></span>`;
+          }
+        });
+        mathLineHtml += `</div>`;
+
+        // 選項區域 (打亂順序)
+        let optionsHtml = '';
+        if (!isStepDone) {
+          // 產生洗牌選項
+          if (!step.shuffledOptions) {
+            step.shuffledOptions = [...step.options].sort(() => Math.random() - 0.5);
+          }
+
+          optionsHtml = `
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="text-xs text-slate-400 font-bold mb-2">點擊數字填入空格：</div>
+              <div class="flex flex-wrap gap-2 mb-4">
+                ${step.shuffledOptions.map(opt => `
+                  <button onclick="clickOption(${q.id}, ${sIdx}, '${opt}')" 
+                          class="btn-option bg-slate-100 hover:bg-blue-50 text-blue-700 font-extrabold px-4 py-2 rounded-xl text-lg border border-slate-200">
+                    ${opt}
+                  </button>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-3">
+                <button onclick="checkStep(${q.id}, ${sIdx})" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
+                  <span>檢查答案</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+                <span id="msg-${q.id}-${sIdx}" class="font-bold text-sm"></span>
+              </div>
+            </div>
+          `;
+        }
+
+        card.innerHTML = headerHtml + mathLineHtml + optionsHtml;
+        stepsWrapper.appendChild(card);
+
+        // 動態渲染 KaTeX
+        renderMathInContainer(card);
+      });
+
+      // 高亮第一個空的 slot
+      updateActiveSlotHighlight(q.id, prog.currentStep);
+    }
+
+    // 更新 Slot 高亮狀態
+    function updateActiveSlotHighlight(qId, stepIdx) {
+      const q = questionsData.find(item => item.id === qId);
+      if (!q || !q.steps[stepIdx]) return;
+
+      const step = q.steps[stepIdx];
+      let foundFirstEmpty = false;
+
+      step.slots.forEach((_, slotIdx) => {
+        const slotEl = document.getElementById(`slot-${qId}-${stepIdx}-${slotIdx}`);
+        if (!slotEl) return;
+        slotEl.classList.remove('active');
+
+        if (!foundFirstEmpty && slotEl.innerText.trim() === "") {
+          slotEl.classList.add('active');
+          foundFirstEmpty = true;
+        }
+      });
+    }
+
+    // 點擊選項填入
+    function clickOption(qId, stepIdx, value) {
+      const q = questionsData.find(item => item.id === qId);
+      const step = q.steps[stepIdx];
+
+      for (let i = 0; i < step.slots.length; i++) {
+        const slotEl = document.getElementById(`slot-${qId}-${stepIdx}-${i}`);
+        if (slotEl && slotEl.innerText.trim() === "") {
+          slotEl.innerText = value;
+          userProgress[qId].stepAnswers[`${stepIdx}-${i}`] = value;
+          break;
+        }
+      }
+      updateActiveSlotHighlight(qId, stepIdx);
+    }
+
+    // 點擊 Slot 清空
+    function clearSlot(qId, stepIdx, slotIdx) {
+      const prog = userProgress[qId];
+      if (stepIdx > prog.currentStep || prog.completed) return; // 依序填寫防呆
+
+      const slotEl = document.getElementById(`slot-${qId}-${stepIdx}-${slotIdx}`);
+      if (slotEl) {
+        slotEl.innerText = "";
+        delete prog.stepAnswers[`${stepIdx}-${slotIdx}`];
+        updateActiveSlotHighlight(qId, stepIdx);
+      }
+    }
+
+    // 檢查步驟答案
+    function checkStep(qId, stepIdx) {
+      const q = questionsData.find(item => item.id === qId);
+      const step = q.steps[stepIdx];
+      const msgEl = document.getElementById(`msg-${qId}-${stepIdx}`);
+      const prog = userProgress[qId];
+
+      // 檢查是否填滿
+      let userValues = [];
+      for (let i = 0; i < step.slots.length; i++) {
+        const slotEl = document.getElementById(`slot-${qId}-${stepIdx}-${i}`);
+        const val = slotEl ? slotEl.innerText.trim() : "";
+        if (!val) {
+          msgEl.className = "text-amber-600 font-bold text-sm";
+          msgEl.innerText = "⚠️ 請填滿所有空格喔！";
+          playSound('wrong');
+          return;
+        }
+        userValues.push(val);
+      }
+
+      // 驗證正確性
+      const isCorrect = userValues.every((val, idx) => val === step.slots[idx]);
+
+      if (isCorrect) {
+        playSound('correct');
+        msgEl.className = "text-emerald-600 font-bold text-sm flex items-center gap-1";
+        msgEl.innerHTML = "✨ 答對了！太厲害了！";
+
+        // 若該步驟沒有錯過，才給分 (每步驟 10 分)
+        if (!prog.failedSteps.has(stepIdx)) {
+          totalScore += 10;
+          document.getElementById("score-display").innerText = totalScore;
+        }
+
+        // 解鎖下一步
+        prog.currentStep++;
+        if (prog.currentStep >= q.steps.length) {
+          prog.completed = true;
+        }
+
+        renderNav();
+
+        // 延遲更新畫面並平滑滑動
+        setTimeout(() => {
+          renderSteps(q);
+          if (prog.completed) {
+            checkAllCompleted();
+          } else {
+            const nextCard = document.getElementById(`step-card-${qId}-${prog.currentStep}`);
+            if (nextCard) {
+              nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        }, 500);
+
+      } else {
+        playSound('wrong');
+        prog.failedSteps.add(stepIdx); // 標記此步驟曾答錯，不給分
+        msgEl.className = "text-rose-600 font-bold text-sm";
+        msgEl.innerText = "❌ 再想想看喔！";
+      }
+    }
+
+    // 檢查是否所有題目都完成
+    function checkAllCompleted() {
+      const allDone = questionsData.every(q => userProgress[q.id].completed);
+      if (allDone) {
+        clearInterval(timerInterval);
+        showFinishModal();
+      }
+    }
+
+    // 顯示完成彈窗
+    function showFinishModal() {
+      const modal = document.getElementById("finish-modal");
+      const content = modal.querySelector(".modal-content");
+      
+      document.getElementById("modal-score").innerText = totalScore;
+      
+      const usedSeconds = 420 - timerSeconds;
+      const mins = Math.floor(usedSeconds / 60);
+      const secs = usedSeconds % 60;
+      document.getElementById("modal-time").innerText = 
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        content.classList.remove("scale-95", "opacity-0");
+        content.classList.add("scale-100", "opacity-100");
+      }, 10);
+    }
+
+    // 關閉視窗 (保留答題進度)
+    function closeModal() {
+      const modal = document.getElementById("finish-modal");
+      const content = modal.querySelector(".modal-content");
+      content.classList.remove("scale-100", "opacity-100");
+      content.classList.add("scale-95", "opacity-0");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 200);
+    }
+
+    // 再做一次 (重置所有進度)
+    function restartAll() {
+      totalScore = 0;
+      timerSeconds = 420;
+      initProgress();
+      closeModal();
+      renderNav();
+      loadQuestion(0);
+      startTimer();
+    }
+  </script>
+</body>
+</html>
