@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小小調饮師：完美比例大挑戰</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Round fonts for readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #f0fdf4;
+        }
+        /* Custom Liquid Animation */
+        .liquid-fill {
+            transition: height 0.5s ease-in-out, background-color 0.5s ease-in-out;
+        }
+        /* Glass styling */
+        .glass-cup {
+            border: 6px solid #94a3b8;
+            border-top: none;
+            border-bottom-left-radius: 2rem;
+            border-bottom-right-radius: 2rem;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.6), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-emerald-600 text-white shadow-lg p-4 sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+                <div class="bg-white text-emerald-600 p-2 rounded-xl text-2xl font-black">🧋</div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-wide">小小調飲師</h1>
+                    <p class="text-xs text-emerald-100">完美比例大挑戰 (國小六年級數學)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="tts-toggle" onclick="toggleSpeech()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 border border-emerald-500">
+                    <i class="fas fa-volume-up"></i> <span id="tts-status">語音：開啟</span>
+                </button>
+                <button onclick="goHome()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1 border border-amber-400">
+                    <i class="fas fa-home"></i> 回首頁
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-4xl mx-auto w-full p-4 flex-grow">
+
+        <!-- VIEW 1: MODE SELECT SCREEN -->
+        <section id="view-mode-select" class="space-y-6 my-4">
+            <div class="text-center space-y-2 bg-white p-6 rounded-3xl shadow-sm border-2 border-emerald-100">
+                <h2 class="text-2xl sm:text-3xl font-black text-emerald-800">歡迎來到調飲大師工坊！</h2>
+                <p class="text-slate-600 text-base sm:text-lg">請選擇最適合你的學習輔助模式：</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ID Mode Card -->
+                <div onclick="selectMode('ID')" class="group bg-white hover:bg-emerald-50 border-4 border-emerald-300 hover:border-emerald-500 rounded-3xl p-6 shadow-md hover:shadow-xl transition cursor-pointer flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-4xl">🌱</span>
+                            <span class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full text-xs">具體圖像與匙數操作</span>
+                        </div>
+                        <h3 class="text-2xl font-black text-emerald-900 group-hover:text-emerald-700">輕度學習輔助模式 (ID)</h3>
+                        <p class="text-slate-600 text-sm mt-2 leading-relaxed">
+                            • 使用直覺的「1匙、2匙」數量計算<br>
+                            • 完全圖像化提示，不用算毫升 (mL)<br>
+                            • 溫和指引，配有清晰視覺導引標記
+                        </p>
+                    </div>
+                    <button class="w-full bg-emerald-500 group-hover:bg-emerald-600 text-white font-black py-3 rounded-2xl text-lg shadow">
+                        選擇這個模式開始 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- LD Mode Card -->
+                <div onclick="selectMode('LD')" class="group bg-white hover:bg-sky-50 border-4 border-sky-300 hover:border-sky-500 rounded-3xl p-6 shadow-md hover:shadow-xl transition cursor-pointer flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-4xl">⚡</span>
+                            <span class="bg-sky-100 text-sky-800 font-bold px-3 py-1 rounded-full text-xs">大字體與計算引導</span>
+                        </div>
+                        <h3 class="text-2xl font-black text-sky-900 group-hover:text-sky-700">邏輯與符號輔助模式 (LD)</h3>
+                        <p class="text-slate-600 text-sm mt-2 leading-relaxed">
+                            • 清晰的高對比大字體與文字強調<br>
+                            • 內建「步驟化計算器」與比值對照板<br>
+                            • 協助專注於比例概念，減輕記憶負擔
+                        </p>
+                    </div>
+                    <button class="w-full bg-sky-500 group-hover:bg-sky-600 text-white font-black py-3 rounded-2xl text-lg shadow">
+                        選擇這個模式開始 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: LEVEL SELECT SCREEN -->
+        <section id="view-level-select" class="hidden space-y-6 my-4">
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border">
+                <div>
+                    <span id="current-mode-badge" class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full text-xs">模式</span>
+                    <h2 class="text-xl font-bold text-slate-800 mt-1">請選擇挑戰關卡</h2>
+                </div>
+                <button onclick="switchMode()" class="text-slate-500 hover:text-slate-700 text-sm underline">變更模式</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Level 1 -->
+                <div onclick="startLevel(1)" class="bg-white border-2 border-amber-200 hover:border-amber-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                        <div class="w-12 h-12 bg-amber-100 text-amber-600 font-black text-2xl rounded-2xl flex items-center justify-center">1</div>
+                        <h3 class="text-lg font-bold text-slate-800">第一關：初級實習生</h3>
+                        <p class="text-xs text-slate-500">基礎「比與比值」概念訓練。比值就是兩者量的關係！</p>
+                    </div>
+                    <button class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-sm">開始挑戰</button>
+                </div>
+
+                <!-- Level 2 -->
+                <div onclick="startLevel(2)" class="bg-white border-2 border-orange-200 hover:border-orange-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                        <div class="w-12 h-12 bg-orange-100 text-orange-600 font-black text-2xl rounded-2xl flex items-center justify-center">2</div>
+                        <h3 class="text-lg font-bold text-slate-800">第二關：正式調飲師</h3>
+                        <p class="text-xs text-slate-500">「相等的比」擴分與約分應用。做大杯飲料要同比例放大喔！</p>
+                    </div>
+                    <button class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-xl text-sm">開始挑戰</button>
+                </div>
+
+                <!-- Level 3 -->
+                <div onclick="startLevel(3)" class="bg-white border-2 border-purple-200 hover:border-purple-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                        <div class="w-12 h-12 bg-purple-100 text-purple-600 font-black text-2xl rounded-2xl flex items-center justify-center">3</div>
+                        <h3 class="text-lg font-bold text-slate-800">第三關：調飲大師</h3>
+                        <p class="text-xs text-slate-500">生活情境綜合挑戰與三種原料比例調配！</p>
+                    </div>
+                    <button class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 rounded-xl text-sm">開始挑戰</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: GAMEPLAY SCREEN -->
+        <section id="view-game" class="hidden space-y-4">
+
+            <!-- Top Game Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border flex flex-wrap justify-between items-center gap-2">
+                <div class="flex items-center gap-2">
+                    <button onclick="backToLevels()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-arrow-left text-lg"></i></button>
+                    <span id="game-level-title" class="font-black text-slate-700 text-lg">關卡 1</span>
+                    <span id="game-mode-badge" class="bg-slate-100 text-slate-600 text-xs px-2.5 py-0.5 rounded-full font-bold">🌱 ID模式</span>
+                </div>
+                <div class="flex items-center gap-4 text-sm font-bold">
+                    <div class="text-amber-600"><i class="fas fa-star mr-1"></i>得分：<span id="score-display">0</span></div>
+                    <div class="text-slate-500">進度：<span id="progress-display">1 / 3</span></div>
+                </div>
+            </div>
+
+            <!-- Main Interactive Game Area (Grid) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                
+                <!-- Left: Order & Customer Area (5 cols) -->
+                <div class="md:col-span-5 bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between space-y-4">
+                    <!-- Customer Bubble -->
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 border-b pb-3">
+                            <div id="customer-avatar" class="text-4xl bg-amber-100 p-2 rounded-2xl">👧</div>
+                            <div>
+                                <h4 id="customer-name" class="font-bold text-slate-800">小明客人</h4>
+                                <p class="text-xs text-slate-400">「請幫我調調看這杯飲料！」</p>
+                            </div>
+                            <button onclick="speakCurrentOrder()" class="ml-auto bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-2 rounded-xl text-xs flex items-center gap-1 font-bold">
+                                <i class="fas fa-volume-up"></i> 讀題
+                            </button>
+                        </div>
+
+                        <!-- Order Description Card -->
+                        <div class="bg-amber-50/70 border-2 border-amber-200 rounded-2xl p-4 space-y-2">
+                            <div class="flex items-center justify-between text-xs font-bold text-amber-800">
+                                <span><i class="fas fa-clipboard-list mr-1"></i>訂單需求</span>
+                                <span id="target-recipe-name" class="bg-amber-200 px-2 py-0.5 rounded-md">招牌奶茶</span>
+                            </div>
+                            <div id="order-prompt-text" class="text-slate-800 font-bold text-base sm:text-lg leading-relaxed">
+                                <!-- Dynamic Prompt Text -->
+                            </div>
+                        </div>
+
+                        <!-- Visual Helper / Hints Area (Specifically tailored for ID/LD) -->
+                        <div id="visual-helper-box" class="bg-slate-50 border rounded-2xl p-3 text-xs space-y-1">
+                            <!-- Visual Hints go here -->
+                        </div>
+                    </div>
+
+                    <!-- Calculator / Step Helper Tool Button (for LD mode primarily) -->
+                    <div id="ld-tools-container" class="hidden pt-2 border-t">
+                        <button onclick="toggleLdHelper()" class="w-full bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2 border border-sky-300">
+                            <i class="fas fa-calculator"></i> 打開「步驟化計算小幫手」
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Mixing Station & Cup (7 cols) -->
+                <div class="md:col-span-7 bg-white rounded-3xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between items-center space-y-4">
+                    
+                    <!-- Cup Display -->
+                    <div class="relative w-full max-w-[200px] h-64 flex items-end justify-center py-2">
+                        <!-- Cup Outline -->
+                        <div class="glass-cup relative w-36 h-56 bg-slate-50/40 overflow-hidden flex flex-col-reverse items-center">
+                            <!-- Liquid Layers (Dynamic) -->
+                            <div id="liquid-container" class="w-full flex flex-col-reverse transition-all duration-300" style="height: 0%;">
+                                <!-- Dynamic Color Segments -->
+                            </div>
+                        </div>
+                        <!-- Scale Marks (Visual) -->
+                        <div class="absolute right-2 top-4 bottom-4 flex flex-col justify-between text-[10px] text-slate-400 font-mono">
+                            <span>100%</span>
+                            <span>75%</span>
+                            <span>50%</span>
+                            <span>25%</span>
+                            <span>0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Ingredients Control Panel -->
+                    <div id="controls-panel" class="w-full space-y-3">
+                        <div class="text-center">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">加入原料配方</span>
+                        </div>
+                        <!-- Ingredient Buttons Grid -->
+                        <div id="ingredient-buttons" class="grid grid-cols-2 gap-3">
+                            <!-- Dynamic Ingredient Buttons -->
+                        </div>
+
+                        <!-- Action Controls (Reset / Serve) -->
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <button onclick="resetCup()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-2xl transition text-sm flex items-center justify-center gap-1.5">
+                                <i class="fas fa-undo"></i> 清空倒掉
+                            </button>
+                            <button onclick="checkAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-md hover:shadow-lg transition text-base flex items-center justify-center gap-1.5">
+                                <i class="fas fa-check-circle"></i> 送出飲料！
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- LD STEP-BY-STEP HELPER MODAL -->
+    <div id="ld-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border-4 border-sky-300">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-black text-sky-800 flex items-center gap-2">
+                    <i class="fas fa-lightbulb text-amber-500"></i> 步驟化計算小幫手
+                </h3>
+                <button onclick="toggleLdHelper()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+            </div>
+            
+            <div id="ld-helper-content" class="space-y-3 text-sm text-slate-700">
+                <!-- Dynamic Helper Steps populated by JS -->
+            </div>
+
+            <button onclick="toggleLdHelper()" class="w-full bg-sky-500 text-white font-bold py-2.5 rounded-xl shadow">我知道了，關閉小幫手</button>
+        </div>
+    </div>
+
+    <!-- FEEDBACK DIALOG MODAL -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl transform transition-all">
+            <div id="feedback-icon" class="text-6xl">🎉</div>
+            <h3 id="feedback-title" class="text-2xl font-black text-slate-800">比例太完美了！</h3>
+            <p id="feedback-message" class="text-slate-600 text-sm leading-relaxed">你成功調出符合要求的飲料囉！</p>
+            <div id="feedback-math-explanation" class="bg-emerald-50 text-emerald-900 p-3 rounded-2xl text-xs font-bold text-left space-y-1">
+                <!-- Math concept summary -->
+            </div>
+            <button id="feedback-next-btn" onclick="nextQuestion()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg transition text-base">
+                下一題 <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t py-4 text-center text-xs text-slate-400">
+        <p>國小六年級數學概念：比、比值與相等的比 ｜ 特殊教育適性輔助教學軟體</p>
+    </footer>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        /* ==================== GLOBAL GAME STATE ==================== */
+        let currentMode = 'ID'; // 'ID' (輕度智障) or 'LD' (學習障礙)
+        let currentLevel = 1;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let ttsEnabled = true;
+
+        // User's current ingredients in cup
+        // Holds object like: { ingredientId: amount }
+        let currentCupState = {};
+
+        /* ==================== INGREDIENTS DEFINITION ==================== */
+        const INGREDIENTS = {
+            tea: { name: '紅茶', color: '#b45309', icon: '🧋' },       // Amber-700
+            milk: { name: '鮮奶', color: '#f8fafc', border: '#cbd5e1', icon: '🥛' },  // White
+            lemon: { name: '檸檬汁', color: '#facc15', icon: '🍋' },   // Yellow-400
+            sugar: { name: '糖漿', color: '#fb923c', icon: '🍯' },     // Orange-400
+            water: { name: '氣泡水', color: '#e0f2fe', icon: '🫧' }     // Sky-100
+        };
+
+        /* ==================== QUESTION BANK ==================== */
+        // Questions separated by Level and Mode
+        const QUESTION_BANK = {
+            ID: {
+                1: [
+                    {
+                        recipeName: "鮮奶紅茶",
+                        prompt: "請幫我調一杯鮮奶紅茶！紅茶要 1 匙，鮮奶要 1 匙。（比例是 1 : 1）",
+                        ingredients: ['tea', 'milk'],
+                        unit: '匙',
+                        target: { tea: 1, milk: 1 },
+                        ratioText: "1 : 1",
+                        explanation: "紅茶與鮮奶的份量一樣多，比是 1 : 1，比值是 1！"
+                    },
+                    {
+                        recipeName: "濃郁奶茶",
+                        prompt: "客人想喝奶味濃一點的奶茶！紅茶要 1 匙，鮮奶要 2 匙。（比例是 1 : 2）",
+                        ingredients: ['tea', 'milk'],
+                        unit: '匙',
+                        target: { tea: 1, milk: 2 },
+                        ratioText: "1 : 2",
+                        explanation: "鮮奶數量是紅茶的 2 倍，比是 1 : 2，比值是 1/2 (0.5)！"
+                    },
+                    {
+                        recipeName: "酸甜檸檬水",
+                        prompt: "天氣好熱！請加 2 匙檸檬汁、1 匙糖漿。（比例是 2 : 1）",
+                        ingredients: ['lemon', 'sugar'],
+                        unit: '匙',
+                        target: { lemon: 2, sugar: 1 },
+                        ratioText: "2 : 1",
+                        explanation: "檸檬汁是糖漿的 2 倍，比是 2 : 1，比值是 2！"
+                    }
+                ],
+                2: [
+                    {
+                        recipeName: "派對大杯鮮奶茶",
+                        prompt: "做 1 杯需要：紅茶 2 匙、鮮奶 1 匙。客人要訂『2 杯』，兩種材料都要變成 2 倍喔！",
+                        ingredients: ['tea', 'milk'],
+                        unit: '匙',
+                        target: { tea: 4, milk: 2 },
+                        ratioText: "4 : 2 （等於 2 : 1）",
+                        explanation: "做 2 杯飲料時，紅茶 2×2=4 匙，鮮奶 1×2=2 匙。 4 : 2 與 2 : 1 是『相等的比』！"
+                    },
+                    {
+                        recipeName: "雙倍檸檬氣泡水",
+                        prompt: "1 杯標準檸檬水需要 檸檬汁 1 匙、氣泡水 3 匙。現在做 2 杯，需要幾匙呢？",
+                        ingredients: ['lemon', 'water'],
+                        unit: '匙',
+                        target: { lemon: 2, water: 6 },
+                        ratioText: "2 : 6 （等於 1 : 3）",
+                        explanation: "檸檬 1×2=2 匙，氣泡水 3×2=6 匙。 2 : 6 與 1 : 3 是相等的比！"
+                    }
+                ],
+                3: [
+                    {
+                        recipeName: "特調水果茶",
+                        prompt: "請調配大師特調：紅茶 2 匙、檸檬汁 2 匙、糖漿 1 匙！（三個材料的比是 2 : 2 : 1）",
+                        ingredients: ['tea', 'lemon', 'sugar'],
+                        unit: '匙',
+                        target: { tea: 2, lemon: 2, sugar: 1 },
+                        ratioText: "2 : 2 : 1",
+                        explanation: "太棒了！你完美調配出包含三種原料的連比飲料！"
+                    }
+                ]
+            },
+            LD: {
+                1: [
+                    {
+                        recipeName: "黃金比例奶茶",
+                        prompt: "請調製黃金比例奶茶。要求<b class='text-amber-700'>紅茶</b>與<b class='text-sky-700'>鮮奶</b>的<b>容量比為 3 : 2</b>。總容量為 250 mL。",
+                        ingredients: ['tea', 'milk'],
+                        unit: 'mL',
+                        stepUnit: 50, // button step
+                        target: { tea: 150, milk: 100 },
+                        ratioText: "3 : 2",
+                        ratioValue: "3/2 = 1.5",
+                        explanation: "總共分 3+2=5 份，每份 50mL。紅茶 3 份 (150mL)，鮮奶 2 份 (100mL)。比值是 1.5！",
+                        ldSteps: [
+                            "1. 算出總份數：3 + 2 = 5 份",
+                            "2. 算出每 1 份是多少 mL：250 ÷ 5 = 50 mL",
+                            "3. 紅茶占 3 份：50 × 3 = 150 mL",
+                            "4. 鮮奶占 2 份：50 × 2 = 100 mL"
+                        ]
+                    },
+                    {
+                        recipeName: "美式酸甜檸檬飲",
+                        prompt: "客人指定檸檬汁與糖漿的比為 <b>1 : 3</b>，且<b>糖漿需要 150 mL</b>。請算出需要多少檸檬汁並調製！",
+                        ingredients: ['lemon', 'sugar'],
+                        unit: 'mL',
+                        stepUnit: 50,
+                        target: { lemon: 50, sugar: 150 },
+                        ratioText: "1 : 3",
+                        ratioValue: "1/3",
+                        explanation: "因為糖漿 3 份 = 150 mL，可知 1 份 = 50 mL。所以檸檬汁 1 份就是 50 mL！",
+                        ldSteps: [
+                            "1. 已知糖漿是 3 份，共有 150 mL",
+                            "2. 算出 1 份是多少：150 ÷ 3 = 50 mL",
+                            "3. 檸檬汁是 1 份：50 × 1 = 50 mL"
+                        ]
+                    }
+                ],
+                2: [
+                    {
+                        recipeName: "大杯經典氣泡檸檬",
+                        prompt: "標準配方『檸檬汁 : 氣泡水 = 2 : 5』。今天客人改買大杯，<b>氣泡水加了 250 mL</b>，請問檸檬汁要加多少才符合<b>相等的比</b>？",
+                        ingredients: ['lemon', 'water'],
+                        unit: 'mL',
+                        stepUnit: 50,
+                        target: { lemon: 100, water: 250 },
+                        ratioText: "100 : 250 （等於 2 : 5）",
+                        ratioValue: "2/5 = 0.4",
+                        explanation: "氣泡水從 5 份變 250mL (放大了 50 倍)，所以檸檬汁也要放大 50 倍：2 × 50 = 100 mL！",
+                        ldSteps: [
+                            "1. 觀察氣泡水放大倍數：250 ÷ 5 = 50 倍",
+                            "2. 利用『相等的比』(擴分)：檸檬汁也要放大 50 倍",
+                            "3. 檸檬汁容量：2 × 50 = 100 mL"
+                        ]
+                    },
+                    {
+                        recipeName: "約分簡化特調",
+                        prompt: "助手不小心倒了 <b>120 mL 紅茶與 160 mL 鮮奶</b>。請先把這個比<b>約分為最簡整數比</b>，並調出相同比例的 280 mL 飲料！",
+                        ingredients: ['tea', 'milk'],
+                        unit: 'mL',
+                        stepUnit: 40,
+                        target: { tea: 120, milk: 160 },
+                        ratioText: "120 : 160 = 3 : 4",
+                        ratioValue: "3/4 = 0.75",
+                        explanation: "120與160同除以40，最簡整數比是 3 : 4。你調出的比例完全正確！",
+                        ldSteps: [
+                            "1. 尋找 120 與 160 的最大公因數：40",
+                            "2. 約分：(120÷40) : (160÷40) = 3 : 4",
+                            "3. 最簡整數比為 3 : 4"
+                        ]
+                    }
+                ],
+                3: [
+                    {
+                        recipeName: "三元連比大師特飲",
+                        prompt: "請調配包含三種原料的飲料：<b>紅茶 : 鮮奶 : 糖漿 = 3 : 2 : 1</b>。已知總容量需要 300 mL。",
+                        ingredients: ['tea', 'milk', 'sugar'],
+                        unit: 'mL',
+                        stepUnit: 50,
+                        target: { tea: 150, milk: 100, sugar: 50 },
+                        ratioText: "3 : 2 : 1",
+                        ratioValue: "3:2:1 連比",
+                        explanation: "總份數 3+2+1=6 份，每份 50mL。紅茶 150mL、鮮奶 100mL、糖漿 50mL！完美調配！",
+                        ldSteps: [
+                            "1. 算出連比總份數：3 + 2 + 1 = 6 份",
+                            "2. 算出 1 份是多少 mL：300 ÷ 6 = 50 mL",
+                            "3. 紅茶 (3份)：50 × 3 = 150 mL",
+                            "4. 鮮奶 (2份)：50 × 2 = 100 mL",
+                            "5. 糖漿 (1份)：50 × 1 = 50 mL"
+                        ]
+                    }
+                ]
+            }
+        };
+
+        /* ==================== INITIALIZATION & NAVIGATION ==================== */
+        window.onload = function() {
+            // Check initial state
+            showView('view-mode-select');
+        };
+
+        function showView(viewId) {
+            ['view-mode-select', 'view-level-select', 'view-game'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function goHome() {
+            window.speechSynthesis.cancel();
+            showView('view-mode-select');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('current-mode-badge').innerText = mode === 'ID' ? '🌱 輕度智障模式 (ID)' : '⚡ 學習障礙模式 (LD)';
+            document.getElementById('current-mode-badge').className = mode === 'ID' 
+                ? 'bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full text-xs' 
+                : 'bg-sky-100 text-sky-800 font-bold px-3 py-1 rounded-full text-xs';
+            showView('view-level-select');
+            speakText(mode === 'ID' ? "你選擇了輕度學習輔助模式" : "你選擇了邏輯與符號輔助模式");
+        }
+
+        function switchMode() {
+            showView('view-mode-select');
+        }
+
+        function startLevel(lvl) {
+            currentLevel = lvl;
+            currentQuestionIndex = 0;
+            score = 0;
+            setupQuestion();
+            showView('view-game');
+        }
+
+        function backToLevels() {
+            window.speechSynthesis.cancel();
+            showView('view-level-select');
+        }
+
+        /* ==================== GAME LOGIC & SETUP ==================== */
+        function getCurrentQuestion() {
+            const list = QUESTION_BANK[currentMode][currentLevel] || QUESTION_BANK[currentMode][1];
+            return list[currentQuestionIndex % list.length];
+        }
+
+        function setupQuestion() {
+            const q = getCurrentQuestion();
+            currentCupState = {};
+
+            // Update Header Info
+            document.getElementById('game-level-title').innerText = `第 ${currentLevel} 關`;
+            document.getElementById('game-mode-badge').innerText = currentMode === 'ID' ? '🌱 ID 模式' : '⚡ LD 模式';
+            document.getElementById('score-display').innerText = score;
+            
+            const totalQ = (QUESTION_BANK[currentMode][currentLevel] || []).length;
+            document.getElementById('progress-display').innerText = `${currentQuestionIndex + 1} / ${totalQ}`;
+
+            // Recipe info
+            document.getElementById('target-recipe-name').innerText = q.recipeName;
+            document.getElementById('order-prompt-text').innerHTML = q.prompt;
+
+            // Show/Hide LD Tools
+            const ldContainer = document.getElementById('ld-tools-container');
+            if (currentMode === 'LD') {
+                ldContainer.classList.remove('hidden');
+                populateLdHelperSteps(q.ldSteps);
+            } else {
+                ldContainer.classList.add('hidden');
+            }
+
+            // Visual Helper box rendering
+            renderVisualHelper(q);
+
+            // Render Ingredient Buttons
+            renderControls(q);
+
+            // Reset Cup Graphics
+            updateCupGraphics();
+
+            // Speech read question
+            speakCurrentOrder();
+        }
+
+        /* Render Helper Card for ID / LD */
+        function renderVisualHelper(q) {
+            const helperBox = document.getElementById('visual-helper-box');
+            helperBox.innerHTML = '';
+
+            if (currentMode === 'ID') {
+                // Render pictorial hints (e.g. 🥛🥛 + 🧋)
+                let html = `<div class="font-bold text-emerald-800 mb-1">💡 提示小圖卡：</div><div class="flex flex-wrap gap-2 items-center text-sm">`;
+                for (let ingKey of q.ingredients) {
+                    const ing = INGREDIENTS[ingKey];
+                    const count = q.target[ingKey];
+                    html += `<div class="bg-white px-2 py-1 rounded-lg border flex items-center gap-1 font-bold">
+                                <span>${ing.name}:</span>`;
+                    for (let i = 0; i < count; i++) {
+                        html += `<span>${ing.icon}</span>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+                helperBox.innerHTML = html;
+            } else {
+                // LD Mode: Show Ratio & Ratio Value Converter Card
+                let html = `<div class="font-bold text-sky-800 mb-1">📐 比與比值對照提示：</div>
+                            <div class="flex flex-wrap gap-3 text-xs">
+                                <span class="bg-white px-2 py-1 rounded border">目標最簡比：<b>${q.ratioText}</b></span>
+                                ${q.ratioValue ? `<span class="bg-sky-100 text-sky-900 px-2 py-1 rounded font-bold">對應比值：${q.ratioValue}</span>` : ''}
+                            </div>`;
+                helperBox.innerHTML = html;
+            }
+        }
+
+        /* Render Interactive Buttons */
+        function renderControls(q) {
+            const container = document.getElementById('ingredient-buttons');
+            container.innerHTML = '';
+
+            const step = q.unit === '匙' ? 1 : (q.stepUnit || 50);
+
+            q.ingredients.forEach(ingKey => {
+                const ing = INGREDIENTS[ingKey];
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 border-2 transition shadow-sm hover:shadow active:scale-95`;
+                btn.style.backgroundColor = ing.color === '#f8fafc' ? '#ffffff' : ing.color + '20'; // Soft background
+                btn.style.borderColor = ing.color === '#f8fafc' ? '#cbd5e1' : ing.color;
+
+                btn.innerHTML = `
+                    <span class="text-2xl">${ing.icon}</span>
+                    <span class="text-slate-800 text-sm">${ing.name}</span>
+                    <span class="text-xs text-slate-500 font-bold bg-white/80 px-2 py-0.5 rounded-full border">
+                        +${step} ${q.unit}
+                    </span>
+                `;
+
+                btn.onclick = () => addIngredient(ingKey, step);
+                container.appendChild(btn);
+            });
+        }
+
+        /* Add Ingredient Logic */
+        function addIngredient(ingKey, amount) {
+            currentCupState[ingKey] = (currentCupState[ingKey] || 0) + amount;
+            updateCupGraphics();
+
+            // Sound / Speech Feedback
+            const ing = INGREDIENTS[ingKey];
+            speakText(`加${amount}${getCurrentQuestion().unit}${ing.name}`);
+        }
+
+        /* Reset Cup */
+        function resetCup() {
+            currentCupState = {};
+            updateCupGraphics();
+            speakText("飲料清空了");
+        }
+
+        /* Update Liquid Display inside Glass Cup */
+        function updateCupGraphics() {
+            const container = document.getElementById('liquid-container');
+            container.innerHTML = '';
+
+            const q = getCurrentQuestion();
+            
+            // Calculate total volume in cup
+            let totalInCup = 0;
+            for (let key in currentCupState) {
+                totalInCup += currentCupState[key];
+            }
+
+            // Estimate target max capacity for percentage calculation
+            let targetTotal = 0;
+            for (let key in q.target) {
+                targetTotal += q.target[key];
+            }
+            const maxCap = Math.max(targetTotal * 1.2, totalInCup, 1);
+
+            // Container height relative to cup
+            const percentage = Math.min((totalInCup / maxCap) * 100, 100);
+            container.style.height = `${percentage}%`;
+
+            // Create colored blocks inside container
+            for (let key in currentCupState) {
+                const amount = currentCupState[key];
+                if (amount <= 0) continue;
+
+                const ing = INGREDIENTS[key];
+                const blockPct = (amount / totalInCup) * 100;
+
+                const block = document.createElement('div');
+                block.className = "w-full transition-all duration-300 flex items-center justify-center text-[10px] font-bold text-slate-700 overflow-hidden";
+                block.style.height = `${blockPct}%`;
+                block.style.backgroundColor = ing.color;
+                if (ing.border) block.style.borderTop = `1px solid ${ing.border}`;
+
+                // Display amount inside block if space permits
+                block.innerText = `${ing.name} ${amount}${q.unit}`;
+                container.appendChild(block);
+            }
+        }
+
+        /* ==================== ANSWER CHECKING & FEEDBACK ==================== */
+        function checkAnswer() {
+            const q = getCurrentQuestion();
+            let isCorrect = true;
+
+            // Check if user's ingredients match exact target (or ratio equivalent)
+            for (let key of q.ingredients) {
+                const userVal = currentCupState[key] || 0;
+                const targetVal = q.target[key];
+                if (userVal !== targetVal) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            // Ensure no extra unexpected ingredients were added
+            for (let key in currentCupState) {
+                if (!q.ingredients.includes(key) && currentCupState[key] > 0) {
+                    isCorrect = false;
+                }
+            }
+
+            showFeedbackModal(isCorrect, q);
+        }
+
+        function showFeedbackModal(isCorrect, q) {
+            const modal = document.getElementById('feedback-modal');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const msg = document.getElementById('feedback-message');
+            const mathBox = document.getElementById('feedback-math-explanation');
+            const nextBtn = document.getElementById('feedback-next-btn');
+
+            modal.classList.remove('hidden');
+
+            if (isCorrect) {
+                score += 100;
+                document.getElementById('score-display').innerText = score;
+                triggerConfetti();
+
+                icon.innerText = "🎉";
+                title.innerText = "比例太完美了！";
+                title.className = "text-2xl font-black text-emerald-600";
+                msg.innerText = `太棒了！你完美調出了「${q.recipeName}」！`;
+                
+                mathBox.className = "bg-emerald-50 text-emerald-900 p-3 rounded-2xl text-xs font-bold text-left space-y-1 border border-emerald-200";
+                mathBox.innerHTML = `
+                    <div class="text-sm font-black text-emerald-700">🧠 數學小觀念解析：</div>
+                    <p>${q.explanation}</p>
+                `;
+
+                nextBtn.innerText = "下一題 ➔";
+                nextBtn.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg transition text-base";
+                
+                speakText(`太棒了！比例太完美了！${q.explanation}`);
+
+            } else {
+                icon.innerText = "😅";
+                title.innerText = "味道好像怪怪的喔！";
+                title.className = "text-2xl font-black text-amber-600";
+                msg.innerText = "沒關係，我們再來觀察一下比例！可以點擊「清空倒掉」重新試試看喔！";
+                
+                // Formulate gentle error hint
+                let currentRatioDesc = q.ingredients.map(k => `${INGREDIENTS[k].name}: ${currentCupState[k] || 0}${q.unit}`).join(', ');
+                
+                mathBox.className = "bg-amber-50 text-amber-900 p-3 rounded-2xl text-xs font-bold text-left space-y-1 border border-amber-200";
+                mathBox.innerHTML = `
+                    <div class="text-sm font-black text-amber-700">🔍 目前調配情形：</div>
+                    <p>你目前加了：${currentRatioDesc}</p>
+                    <p class="text-amber-600 mt-1">💡 提示：請再讀一次訂單需求，看看數量有沒有對齊喔！</p>
+                `;
+
+                nextBtn.innerText = "再試一次 🔄";
+                nextBtn.className = "w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-3 rounded-2xl shadow-lg transition text-base";
+
+                speakText("味道好像不太對喔，再觀察一下比例提示，試試看重來！");
+            }
+        }
+
+        function nextQuestion() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+            const qList = QUESTION_BANK[currentMode][currentLevel] || [];
+            
+            // Check if level completed
+            if (currentQuestionIndex + 1 >= qList.length) {
+                // Completed level
+                speakText("恭喜你完成這個關卡的所有挑戰！");
+                alert("🌟 恭喜你順利完成本關卡！");
+                showView('view-level-select');
+            } else {
+                currentQuestionIndex++;
+                setupQuestion();
+            }
+        }
+
+        /* ==================== LD MODAL & HELPERS ==================== */
+        function toggleLdHelper() {
+            const modal = document.getElementById('ld-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function populateLdHelperSteps(steps) {
+            const container = document.getElementById('ld-helper-content');
+            container.innerHTML = '';
+            if (!steps || steps.length === 0) {
+                container.innerText = "本題可直接根據比例進行對應計算！";
+                return;
+            }
+
+            steps.forEach(stepText => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = "bg-sky-50 border border-sky-200 p-2.5 rounded-xl font-bold text-sky-900";
+                stepDiv.innerText = stepText;
+                container.appendChild(stepDiv);
+            });
+        }
+
+        /* ==================== SPEECH SYNTHESIS (TTS) ==================== */
+        function toggleSpeech() {
+            ttsEnabled = !ttsEnabled;
+            document.getElementById('tts-status').innerText = ttsEnabled ? "語音：開啟" : "語音：關閉";
+            if (!ttsEnabled) window.speechSynthesis.cancel();
+        }
+
+        function speakText(text) {
+            if (!ttsEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Stop previous utterance
+            
+            // Clean HTML tags from string if any
+            const cleanText = text.replace(/<[^>]*>?/gm, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'zh-TW';
+            utterance.rate = 0.9; // Slightly slower for better comprehension
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakCurrentOrder() {
+            const q = getCurrentQuestion();
+            speakText(`訂單題目：${q.prompt}`);
+        }
+
+        /* ==================== CONFETTI ANIMATION ==================== */
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12 - 4,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 100
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        alive = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.2; // Gravity
+                        p.life -= 2;
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                if (alive) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
